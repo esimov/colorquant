@@ -4,6 +4,9 @@ import (
 	"image/png"
 	"log"
 	"os"
+	"image"
+	"image/draw"
+	"image/color/palette"
 )
 
 func main() {
@@ -32,7 +35,9 @@ func main() {
 		log.Fatal(err)
 	}
 	quant := dither.Process(img, 1.18)
-	if err = png.Encode(fq, quant); err != nil {
+	p8 := image.NewPaletted(image.Rect(0, 0, quant.Bounds().Dx(), quant.Bounds().Dy()), palette.WebSafe)
+	draw.FloydSteinberg.Draw(p8, p8.Bounds(), quant, image.ZP)
+	if err = png.Encode(fq, p8); err != nil {
 		log.Fatal(err)
 	}
 }

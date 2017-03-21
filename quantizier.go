@@ -9,7 +9,7 @@ import (
 )
 
 // Organize quatization in some logical steps.
-func Quant(img image.Image, nq int) image.Image {
+func Quant(img image.Image, nq int) image.PalettedImage {
 	qz := newQuantizer(img, nq) // set up a work space
 	qz.cluster()                // cluster pixels by color
 	return qz.Paletted()        // generate paletted image from clusters

@@ -97,6 +97,9 @@ func (dither Dither) Process(input image.Image, mul float32) image.Image {
 	for x := 0; x < dx; x++ {
 		for y := 0; y < dy; y++ {
 			r1, g1, b1, _ := img.At(x, y).RGBA()
+			//color := (r1 << 16) | (g1 << 8) | b1
+			//idx := findPaletteColor(palette, img.At(x, y))
+			//println(idx)
 			//println(r1,g1,b1)
 			r2, g2, b2, _ := palette.At(x, y).RGBA()
 			er := r1 - r2
@@ -119,5 +122,27 @@ func (dither Dither) Process(input image.Image, mul float32) image.Image {
 			newimg.Set(x, y, color.RGBA{uint8(r1 >> 24), uint8(g1 >> 16), uint8(b2 >> 8), uint8(0xff)})
 		}
 	}
-	return newimg
+	return palette
+}
+
+func findPaletteColor(palette image.PalettedImage, color color.Color) uint8 {
+	var minpos uint8
+	r, g, b, _ := color.RGBA()
+	dmin := 256 * 256 * 256 * 256
+
+	for x := 0; x < palette.Bounds().Dx(); x++ {
+		for y := 0; y < palette.Bounds().Dy(); y++ {
+			dr, dg, db, _ := palette.At(x, y).RGBA()
+			dr = r - dr
+			dg = g - dg
+			db = b - db
+			d := dr * dr + dg * dg + db * db
+			index := palette.ColorIndexAt(x, y)
+			if int(d) < dmin {
+				dmin = int(d)
+				minpos = index
+			}
+		}
+	}
+	return minpos
 }
