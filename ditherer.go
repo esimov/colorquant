@@ -2,29 +2,26 @@ package main
 
 import (
 	"image"
-	"image/draw"
 	"image/color"
+	"image/color/palette"
 )
 
-type Settings struct {
-	Filter [][]float32
+type settings struct {
+	filter [][]float32
 }
 
 type Dither struct {
-	Type string
-	Settings
+	method string
+	settings
 }
 
 func (dither Dither) Process(input image.Image, mul float32) image.Image {
-	bounds := input.Bounds()
-	img := image.NewRGBA(bounds)
-	for x := bounds.Min.X; x < bounds.Dx(); x++ {
-		for y := bounds.Min.Y; y < bounds.Dy(); y++ {
-			pixel := input.At(x, y)
-			img.Set(x, y, pixel)
-		}
-	}
+	dst := image.NewPaletted(image.Rect(0, 0, input.Bounds().Dx(), input.Bounds().Dy()), palette.WebSafe)
 	dx, dy := input.Bounds().Dx(), input.Bounds().Dy()
+
+	quantErrorCurr := make([][4]int32, dx+2)
+	quantErrorNext := make([][4]int32, dx+2)
+	quantizedImg := Quant(input, 256)
 
 	// Prepopulate multidimensional slices
 	rErr := make([][]float32, dx)
@@ -40,109 +37,91 @@ func (dither Dither) Process(input image.Image, mul float32) image.Image {
 			bErr[x][y] = 0
 		}
 	}
+	out := color.RGBA64{A: 0xffff}
+	for x := 0; x != dx; x++ {
+		for y := 0; y != dy; y++ {
+			sr, sg, sb, sa := quantizedImg.At(x, y).RGBA()
+			er, eg, eb, ea := int32(sr), int32(sg), int32(sb), int32(sa)
+			er = clamp(er + int32(rErr[x][y] * mul))
+			eg = clamp(eg + int32(gErr[x][y] * mul))
+			eb = clamp(eb + int32(bErr[x][y] * mul))
 
-	var qrr, qrg, qrb float32
-	for x := 0; x < dx; x++ {
-		for y := 0; y < dy; y++ {
-			r32, g32, b32, a := img.At(x, y).RGBA()
-			r, g, b := float32(uint8(r32)), float32(uint8(g32)), float32(uint8(b32))
-			r -= rErr[x][y] * mul
-			g -= gErr[x][y] * mul
-			b -= bErr[x][y] * mul
+			out.R = uint16(er)
+			out.G = uint16(eg)
+			out.B = uint16(eb)
+			out.A = uint16(ea)
 
-			// Diffuse the error of each calculation to the neighboring pixels
-			if r < 128 {
-				qrr = -r
-				r = 0
-			} else {
-				qrr = 255 - r
-				r = 255
-			}
-			if g < 128 {
-				qrg = -g
-				g = 0
-			} else {
-				qrg = 255 - g
-				g = 255
-			}
-			if b < 128 {
-				qrb = -b
-				b = 0
-			} else {
-				qrb = 255 - b
-				b = 255
-			}
-			img.Set(x, y, color.RGBA{uint8(r), uint8(g), uint8(b), uint8(a)})
+			// The third argument is &out instead of out (and out is
+			// declared outside of the inner loop) to avoid the implicit
+			// conversion to color.Color here allocating memory in the
+			// inner loop if sizeof(color.RGBA64) > sizeof(uintptr).
+			dst.Set(x, y, &out)
+
+			sr, sg, sb, sa = dst.At(x, y).RGBA()
+			//r1, g1, b1, a1 := findPaletteColor(dst, quantizedImg.At(x, y)).RGBA()
+			er -= int32(sr)
+			eg -= int32(sg)
+			eb -= int32(sb)
+			ea -= int32(sa)
 
 			// Diffuse error in two dimension
-			ydim := len(dither.Filter) - 1
-			xdim := len(dither.Filter[0]) / 2
+			ydim := len(dither.filter) - 1
+			xdim := len(dither.filter[0]) / 2
 			for xx := 0; xx < ydim + 1; xx++ {
 				for yy := -xdim; yy <= xdim - 1; yy++ {
 					if y + yy < 0 || dy <= y + yy || x + xx < 0 || dx <= x + xx {
 						continue
 					}
-					// Adds the error of the previous pixel to the current pixel
-					rErr[x+xx][y+yy] += qrr * dither.Filter[xx][yy + ydim]
-					gErr[x+xx][y+yy] += qrg * dither.Filter[xx][yy + ydim]
-					bErr[x+xx][y+yy] += qrb * dither.Filter[xx][yy + ydim]
+					// Propagate the quantization error
+					rErr[x+xx][y+yy] += float32(er) * dither.filter[xx][yy + ydim]
+					gErr[x+xx][y+yy] += float32(eg) * dither.filter[xx][yy + ydim]
+					bErr[x+xx][y+yy] += float32(eb) * dither.filter[xx][yy + ydim]
 				}
 			}
 		}
-	}
-
-	newimg := image.NewRGBA(bounds)
-	palette := Quant(input, 16)
-	draw.FloydSteinberg.Draw(newimg, input.Bounds(), palette, image.ZP)
-	for x := 0; x < dx; x++ {
-		for y := 0; y < dy; y++ {
-			r1, g1, b1, _ := img.At(x, y).RGBA()
-			//color := (r1 << 16) | (g1 << 8) | b1
-			//idx := findPaletteColor(palette, img.At(x, y))
-			//println(idx)
-			//println(r1,g1,b1)
-			r2, g2, b2, _ := palette.At(x, y).RGBA()
-			er := r1 - r2
-			eg := g1 - g2
-			eb := b1 - b2
-			//println(r2)
-
-			for i := 0; i < len(dither.Filter); i++ {
-				x1 := dither.Filter[i][1]
-				y1 := dither.Filter[i][2]
-
-				d := dither.Filter[i][0]
-				//println(d)
-				r1, g1, b1, _ = img.At(x + int(x1), int(y1)).RGBA()
-				r1 = r1 + (er * uint32(d))
-				g1 = g1 + (eg * uint32(d))
-				b1 = b1 + (eb * uint32(d))
-				//println(r1)
-			}
-			newimg.Set(x, y, color.RGBA{uint8(r1 >> 24), uint8(g1 >> 16), uint8(b2 >> 8), uint8(0xff)})
+		quantErrorCurr, quantErrorNext = quantErrorNext, quantErrorCurr
+		for i := range quantErrorNext {
+			quantErrorNext[i] = [4]int32{}
 		}
 	}
-	return palette
+	return dst
 }
 
-func findPaletteColor(palette image.PalettedImage, color color.Color) uint8 {
-	var minpos uint8
-	r, g, b, _ := color.RGBA()
-	dmin := 256 * 256 * 256 * 256
-
-	for x := 0; x < palette.Bounds().Dx(); x++ {
-		for y := 0; y < palette.Bounds().Dy(); y++ {
-			dr, dg, db, _ := palette.At(x, y).RGBA()
-			dr = r - dr
-			dg = g - dg
-			db = b - db
-			d := dr * dr + dg * dg + db * db
-			index := palette.ColorIndexAt(x, y)
-			if int(d) < dmin {
-				dmin = int(d)
-				minpos = index
-			}
+// Returns the index of the palette color closest to quantizedImg in Euclidean R,G,B,A space.
+func findPaletteColor(palette *image.Paletted, quantizedImg color.Color) color.Color {
+	if len(palette.Palette) == 0 {
+		return nil
+	}
+	cr, cg, cb, ca := quantizedImg.RGBA()
+	ret, bestSum := 0, uint32(1<<32-1)
+	for index, v := range palette.Palette {
+		vr, vg, vb, va := v.RGBA()
+		sum := sqDiff(cr, vr) + sqDiff(cg, vg) + sqDiff(cb, vb) + sqDiff(ca, va)
+		if sum < bestSum {
+			ret, bestSum = index, sum
 		}
 	}
-	return minpos
+	return palette.Palette[ret]
+}
+
+// clamp clamps i to the interval [0, 0xffff].
+func clamp(i int32) int32 {
+	if i < 0 {
+		return 0
+	}
+	if i > 0xffff {
+		return 0xffff
+	}
+	return i
+}
+
+// Return the squared-difference of x and y, shifted by 2 so that adding four of those won't overflow a uint32.
+func sqDiff(x, y uint32) uint32 {
+	var d uint32
+	if x > y {
+		d = uint32(x - y)
+	} else {
+		d = uint32(y - x)
+	}
+	return (d * d) >> 2
 }

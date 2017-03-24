@@ -4,15 +4,14 @@ import (
 	"image/png"
 	"log"
 	"os"
-	"image"
-	"image/draw"
-	"image/color/palette"
+	//"image"
+	//"image/color/palette"
 )
 
 func main() {
 	var dither Dither = Dither{
 		"FloydSteinberg",
-		Settings{
+		settings{
 			[][]float32{
 				[]float32{ 0.0, 0.0, 0.0, 7.0 / 48.0, 5.0 / 48.0 },
 				[]float32{ 3.0 / 48.0, 5.0 / 48.0, 7.0 / 48.0, 5.0 / 48.0, 3.0 / 48.0 },
@@ -35,9 +34,9 @@ func main() {
 		log.Fatal(err)
 	}
 	quant := dither.Process(img, 1.18)
-	p8 := image.NewPaletted(image.Rect(0, 0, quant.Bounds().Dx(), quant.Bounds().Dy()), palette.WebSafe)
-	draw.FloydSteinberg.Draw(p8, p8.Bounds(), quant, image.ZP)
-	if err = png.Encode(fq, p8); err != nil {
+	//p8 := image.NewPaletted(image.Rect(0, 0, quant.Bounds().Dx(), quant.Bounds().Dy()), palette.WebSafe)
+	//FloydSteinberg.Draw(p8, p8.Bounds(), img, image.ZP)
+	if err = png.Encode(fq, quant); err != nil {
 		log.Fatal(err)
 	}
 }
