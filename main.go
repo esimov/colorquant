@@ -22,8 +22,20 @@ func main() {
 				[]float32{ 3.0 / 16.0, 1.0, -1.0 },
 			},
 		},
+		"Burkes" : Dither{
+			[][]float32{
+				[]float32{ 8.0 / 32.0, 1.0, 0.0 },
+				[]float32{ 4.0 / 32.0, 2.0, 0.0 },
+				[]float32{ 2.0 / 32.0, -2.0, 1.0 },
+				[]float32{ 4.0 / 32.0, -1.0, 1.0 },
+				[]float32{ 8.0 / 32.0, 0.0, 1.0 },
+				[]float32{ 4.0 / 32.0, 1.0, 1.0 },
+				[]float32{ 2.0 / 32.0, 2.0, 1.0 },
+				[]float32{ 4.0 / 32.0, 1.0, -1.0 },
+			},
+		},
 	}
-	f, err := os.Open("portal.jpg")
+	f, err := os.Open("david.jpg")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -37,8 +49,10 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	quant := dither["FloydSteinberg"].Process(img)
-	//p8 := image.NewPaletted(image.Rect(0, 0, quant.Bounds().Dx(), quant.Bounds().Dy()), palette.WebSafe)
+	quant, err := dither["FloydSteinberg"].Process(img)
+	if err != nil {
+		log.Fatal(err)
+	}
 	//FloydSteinberg.Draw(p8, p8.Bounds(), img, image.ZP)
 
 	if err = jpeg.Encode(fq, quant, &jpeg.Options{100}); err != nil {

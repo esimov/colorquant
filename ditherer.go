@@ -12,10 +12,14 @@ type Dither struct {
 	filter [][]float32
 }
 
-// Process the image taking as parameter the original image and output the processed image
-func (dither Dither) Process(input image.Image) image.Image {
+// Process the image taking as parameter the original image and save the resulting image.
+func (dither Dither) Process(input image.Image) (image.Image, error) {
 	var quant image.Image
 	var r4, g4, b4, a4 float32
+
+	if dither.filter == nil {
+		return nil, fmt.Errorf("Invalid dithering method.")
+	}
 
 	// Create a new empty RGBA image. This will be the destination of the new processed image.
 	output := image.NewRGBA(image.Rect(0, 0, input.Bounds().Dx(), input.Bounds().Dy()))
@@ -24,9 +28,9 @@ func (dither Dither) Process(input image.Image) image.Image {
 	quantErrorCurr := make([][4]int32, dx+2)
 	quantErrorNext := make([][4]int32, dx+2)
 
-	// Get the quantized image. This is a method which returns a paletted image.
-	// The first parameter is the image we want to quantize. The second parameter is the quantization level (the number of colors).
-	quant = Quant(input, 256)
+	// Import the quantized image.
+	// The first parameter is the destination image. The second parameter is the quantization level (the number of colors).
+	quant = Quant(input, 64)
 
 	// Prepopulate a multidimensional slice. We will use this to store the quantization level.
 	rErr := make([][]float32, dx)
@@ -104,7 +108,7 @@ func (dither Dither) Process(input image.Image) image.Image {
 			quantErrorNext[i] = [4]int32{}
 		}
 	}
-	return output
+	return output, nil
 }
 
 // Returns the index of the palette color closest to quantizedImg in Euclidean R,G,B,A space.
