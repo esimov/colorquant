@@ -3,17 +3,15 @@ package main
 import (
 	"image"
 	_ "image/png"
-	_ "image/jpeg"
+	"image/jpeg"
 	"log"
 	"os"
-	//"image"
-	//"image/color/palette"
-	"image/jpeg"
+	"github.com/esimov/colorquant"
 )
 
 func main() {
-	var dither map[string]Dither = map[string]Dither{
-		"FloydSteinberg" : Dither{
+	var dither map[string]colorquant.Dither = map[string]colorquant.Dither{
+		"FloydSteinberg" : colorquant.Dither{
 			[][]float32{
 				[]float32{ 7.0 / 16.0, 1.0, 0.0 },
 				[]float32{ 3.0 / 16.0, -1.0, 1.0 },
@@ -22,7 +20,7 @@ func main() {
 				[]float32{ 3.0 / 16.0, 1.0, -1.0 },
 			},
 		},
-		"Burkes" : Dither{
+		"Burkes" : colorquant.Dither{
 			[][]float32{
 				[]float32{ 8.0 / 32.0, 1.0, 0.0 },
 				[]float32{ 4.0 / 32.0, 2.0, 0.0 },
@@ -35,7 +33,7 @@ func main() {
 			},
 		},
 	}
-	f, err := os.Open("david.jpg")
+	f, err := os.Open("../input/find-unique-tree-frog-gifts.jpg")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -49,7 +47,8 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	quant, err := dither["FloydSteinberg"].Process(img)
+	floydSteinberg := dither["FloydSteinberg"]
+	quant := floydSteinberg.Quantize(img, 512)
 	if err != nil {
 		log.Fatal(err)
 	}

@@ -1,4 +1,4 @@
-package main
+package colorquant
 
 import (
 	"image"
@@ -7,19 +7,24 @@ import (
 	"math"
 )
 
-// Dithering is a struct containing a two dimensional slice for storing different dithering methods.
+// Struct containing a two dimensional slice for storing different dithering methods.
 type Dither struct {
-	filter [][]float32
+	Filter [][]float32
 }
 
-// Process the image taking as parameter the original image and save the resulting image.
-func (dither Dither) Process(input image.Image) (image.Image, error) {
+// Used to call the default quantize method without applying dithering.
+var Default Quantizer = Dither{}
+
+// The Quantize method takes as parameter the original image and returns the processed image with dithering.
+func (dither Dither) Quantize(input image.Image, nq int) image.Image {
+	res := ditherImage(input, nq, dither)
+	return res
+}
+
+// Private function to call error quantization method (dithering) over an image.
+func ditherImage(input image.Image, nq int, dither Dither) image.Image {
 	var quant image.Image
 	var r4, g4, b4, a4 float32
-
-	if dither.filter == nil {
-		return nil, fmt.Errorf("Invalid dithering method.")
-	}
 
 	// Create a new empty RGBA image. This will be the destination of the new processed image.
 	output := image.NewRGBA(image.Rect(0, 0, input.Bounds().Dx(), input.Bounds().Dy()))
@@ -30,7 +35,7 @@ func (dither Dither) Process(input image.Image) (image.Image, error) {
 
 	// Import the quantized image.
 	// The first parameter is the destination image. The second parameter is the quantization level (the number of colors).
-	quant = Quant(input, 64)
+	quant = Quant{}.Quantize(input, nq)
 
 	// Prepopulate a multidimensional slice. We will use this to store the quantization level.
 	rErr := make([][]float32, dx)
@@ -71,15 +76,15 @@ func (dither Dither) Process(input image.Image) (image.Image, error) {
 			eb := uint8(b1>>8) - uint8(b2>>8)
 			ea := uint8(a1>>8) - uint8(a2>>8)
 
-			for i := 0; i != len(dither.filter); i++ {
-				y1 := dither.filter[i][2] // Y value of the dithering method (between -1, 1)
-				x1 := dither.filter[i][1] // X value of the dithering method (between -1, 1)
+			for i := 0; i != len(dither.Filter); i++ {
+				y1 := dither.Filter[i][2] // Y value of the dithering method (between -1, 1)
+				x1 := dither.Filter[i][1] // X value of the dithering method (between -1, 1)
 
 				// Get the X and Y value from the original image and sum up with the dithering level
 				var xt int = int(x1) + x
 				var yt int = int(y1) + y
 				if xt >= 0 && xt < dx && yt >= 0 && yt < dy {
-					d := dither.filter[i][0]
+					d := dither.Filter[i][0]
 					r3, g3, b3, a3 := output.At(xt, yt).RGBA()
 
 					// Quantize the resulting image with the error level multiplied with the dithering value.
@@ -108,7 +113,7 @@ func (dither Dither) Process(input image.Image) (image.Image, error) {
 			quantErrorNext[i] = [4]int32{}
 		}
 	}
-	return output, nil
+	return output
 }
 
 // Returns the index of the palette color closest to quantizedImg in Euclidean R,G,B,A space.

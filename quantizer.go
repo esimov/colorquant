@@ -1,4 +1,4 @@
-package main
+package colorquant
 
 import (
 	"container/heap"
@@ -8,15 +8,21 @@ import (
 	"sort"
 )
 
-// Organize quatization in some logical steps.
-func Quant(img image.Image, nq int) image.PalettedImage {
-	qz := newQuantizer(img, nq) // set up a work space
-	qz.cluster()                // cluster pixels by color
-	return qz.Paletted()        // generate paletted image from clusters
+// Quantizer interface which implements the Quantize method.
+type Quantizer interface {
+	Quantize(image.Image, int) image.Image
+}
+
+// Image quantization method. Returns a paletted image.
+// We need to use type assertion to match the interface returning type.
+func (q Quant) Quantize(img image.Image, nq int) image.Image {
+	qz := newQuantizer(img, nq) 		// set up a work space
+	qz.cluster()						// cluster pixels by color
+	return qz.Paletted().(image.Image)	// generate paletted image from clusters
 }
 
 // A workspace with members that can be accessed by methods.
-type quantizer struct {
+type Quant struct {
 	img image.Image // original image
 	cs  []cluster   // len is the desired number of colors
 	px  []point     // list of all points in the image
@@ -40,11 +46,11 @@ const (
 	bx
 )
 
-func newQuantizer(img image.Image, nq int) *quantizer {
+func newQuantizer(img image.Image, nq int) *Quant {
 	b := img.Bounds()
 	npx := (b.Max.X - b.Min.X) * (b.Max.Y - b.Min.Y)
 	// Create work space.
-	qz := &quantizer{
+	qz := &Quant{
 		img: img,
 		ch:  make(chValues, npx),
 		cs:  make([]cluster, nq),
@@ -64,7 +70,7 @@ func newQuantizer(img image.Image, nq int) *quantizer {
 	return qz
 }
 
-func (qz *quantizer) cluster() {
+func (qz *Quant) cluster() {
 	// Cluster by repeatedly splitting clusters.
 	// Use a heap as priority queue for picking clusters to split.
 	// The rule will be to spilt the cluster with the most pixels.
@@ -102,7 +108,7 @@ func (qz *quantizer) cluster() {
 	}
 }
 
-func (q *quantizer) setColorRange(c *cluster) {
+func (q *Quant) setColorRange(c *cluster) {
 	// Find extents of color values in each channel.
 	var maxR, maxG, maxB uint32
 	minR := uint32(math.MaxUint32)
@@ -147,7 +153,7 @@ func (q *quantizer) setColorRange(c *cluster) {
 	c.chRange = max - min // also store the range of that channel
 }
 
-func (q *quantizer) Median(c *cluster) uint32 {
+func (q *Quant) Median(c *cluster) uint32 {
 	px := c.px
 	ch := q.ch[:len(px)]
 	// Copy values from appropriate channel to buffer for computing median.
@@ -175,7 +181,7 @@ func (q *quantizer) Median(c *cluster) uint32 {
 	return m
 }
 
-func (q *quantizer) Split(s, c *cluster, m uint32) {
+func (q *Quant) Split(s, c *cluster, m uint32) {
 	px := s.px
 	var v uint32
 	i := 0
@@ -223,7 +229,7 @@ func (q *quantizer) Split(s, c *cluster, m uint32) {
 	c.px = px[i:]
 }
 
-func (qz *quantizer) Paletted() image.PalettedImage {
+func (qz *Quant) Paletted() image.PalettedImage {
 	cp := make(color.Palette, len(qz.cs))
 	pi := image.NewPaletted(qz.img.Bounds(), cp)
 	for i := range qz.cs {
