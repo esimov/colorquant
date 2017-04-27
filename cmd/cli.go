@@ -17,7 +17,7 @@ func main() {
 				[]float32{ 3.0 / 16.0, -1.0, 1.0 },
 				[]float32{ 5.0 / 16.0, 0.0, 1.0 },
 				[]float32{ 1.0 / 16.0, 1.0, 1.0 },
-				[]float32{ 3.0 / 16.0, 1.0, -1.0 },
+				[]float32{ 2.0 / 16.0, 1.0, -1.0 },
 			},
 		},
 		"Burkes" : colorquant.Dither{
@@ -33,7 +33,7 @@ func main() {
 			},
 		},
 	}
-	f, err := os.Open("../input/fishie2.jpg")
+	f, err := os.Open("../input/treefrog.jpg")
 	if err != nil {
 		log.Fatal(err)
 	}

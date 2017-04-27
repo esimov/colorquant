@@ -13,7 +13,7 @@ type Dither struct {
 }
 
 // Used to call the default quantize method without applying dithering.
-var Default Quantizer = Dither{}
+var WithoutDither Quantizer = Dither{}
 
 // The Quantize method takes as parameter the original image and returns the processed image with dithering.
 func (dither Dither) Quantize(input image.Image, nq int) image.Image {
@@ -124,14 +124,15 @@ func findPaletteColor(palette *image.Paletted, quantized color.Color) color.Colo
 	}
 	cr, cg, cb, ca := quantized.RGBA()
 	idx, min := 0, uint32(1<<32-1)
-	// Some arbitrary values.
+
+	// Rec. 709 (sRGB) luma coef.
 	pr = .2126
 	pg = .7152
 	pb = .0722
 	pa = 1.0
 
 	// Get the square root of euclidean distance.
-	euclMax := math.Sqrt(pr * 255 + pg * 255 + pb * 255)
+	euclMax := math.Sqrt(pr * 255 * 255 + pg * 255 * 255 + pb * 255 * 255)
 	for index, v := range palette.Palette {
 		vr, vg, vb, va := v.RGBA()
 		// Get the color distance.
