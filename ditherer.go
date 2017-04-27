@@ -77,8 +77,8 @@ func ditherImage(input image.Image, nq int, dither Dither) image.Image {
 			ea := uint8(a1>>8) - uint8(a2>>8)
 
 			for i := 0; i != len(dither.Filter); i++ {
-				y1 := dither.Filter[i][2] // Y value of the dithering method (between -1, 1)
-				x1 := dither.Filter[i][1] // X value of the dithering method (between -1, 1)
+				y1 := dither.Filter[i][1] // Y value of the dithering method (between -1, 1)
+				x1 := dither.Filter[i][2] // X value of the dithering method (between -1, 1)
 
 				// Get the X and Y value from the original image and sum up with the dithering level
 				var xt int = int(x1) + x

@@ -33,7 +33,7 @@ func main() {
 			},
 		},
 	}
-	f, err := os.Open("../input/find-unique-tree-frog-gifts.jpg")
+	f, err := os.Open("../input/fishie2.jpg")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -43,12 +43,12 @@ func main() {
 	} else if ec != nil {
 		log.Fatal(ec)
 	}
-	fq, err := os.Create("frog16.jpg")
+	fq, err := os.Create("output.jpg")
 	if err != nil {
 		log.Fatal(err)
 	}
 	floydSteinberg := dither["FloydSteinberg"]
-	quant := floydSteinberg.Quantize(img, 512)
+	quant := floydSteinberg.Quantize(img, 256)
 	if err != nil {
 		log.Fatal(err)
 	}
