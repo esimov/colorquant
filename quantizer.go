@@ -17,7 +17,7 @@ type Quantizer interface {
 // We need to use type assertion to match the interface returning type.
 func (q Quant) Quantize(img image.Image, nq int) image.Image {
 	qz := newQuantizer(img, nq) 		// set up a work space
-	qz.cluster()						// cluster pixels by color
+	qz.cluster()				// cluster pixels by color
 	return qz.Paletted().(image.Image)	// generate paletted image from clusters
 }
 

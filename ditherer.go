@@ -3,7 +3,7 @@ package colorquant
 import (
 	"image"
 	"image/color"
-	"fmt"
+	//"fmt"
 	"math"
 )
 
@@ -13,7 +13,7 @@ type Dither struct {
 }
 
 // Used to call the default quantize method without applying dithering.
-var WithoutDither Quantizer = Dither{}
+var NoDither Quantizer = Dither{}
 
 // The Quantize method takes as parameter the original image and returns the processed image with dithering.
 func (dither Dither) Quantize(input image.Image, nq int) image.Image {
@@ -77,12 +77,13 @@ func ditherImage(input image.Image, nq int, dither Dither) image.Image {
 			ea := uint8(a1>>8) - uint8(a2>>8)
 
 			for i := 0; i != len(dither.Filter); i++ {
-				y1 := dither.Filter[i][1] // Y value of the dithering method (between -1, 1)
-				x1 := dither.Filter[i][2] // X value of the dithering method (between -1, 1)
+				y1 := dither.Filter[i][1] // X value of the dithering method
+				x1 := dither.Filter[i][2] // Y value of the dithering method
 
 				// Get the X and Y value from the original image and sum up with the dithering level
 				var xt int = int(x1) + x
 				var yt int = int(y1) + y
+
 				if xt >= 0 && xt < dx && yt >= 0 && yt < dy {
 					d := dither.Filter[i][0]
 					r3, g3, b3, a3 := output.At(xt, yt).RGBA()
@@ -92,12 +93,12 @@ func ditherImage(input image.Image, nq int, dither Dither) image.Image {
 					g4 = float32(uint8(g3)) + (float32(eg) * d)
 					b4 = float32(uint8(b3)) + (float32(eb) * d)
 					a4 = float32(uint8(a3)) + (float32(ea) * d)
-					if r4 > 255 {
+					/*if r4 > 255 {
 						fmt.Println("R3: ", float32(uint8(r3)))
 						fmt.Println("ER: ", float32(er) * d)
 						fmt.Println("Final: ", r4)
 						fmt.Println("==========================")
-					}
+					}*/
 					r := max(0, min(255, int(r4)))
 					g := max(0, min(255, int(g4)))
 					b := max(0, min(255, int(b4)))
