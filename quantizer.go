@@ -4,13 +4,14 @@ import (
 	"container/heap"
 	"image"
 	"image/color"
+	"image/draw"
 	"math"
 	"sort"
 )
 
 // Quantizer interface which implements the Quantize method.
 type Quantizer interface {
-	Quantize(image.Image, int) image.Image
+	Quantize(image.Image, draw.Image, int, bool) image.Image
 }
 
 // Image quantization method. Returns a paletted image.

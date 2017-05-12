@@ -13,6 +13,7 @@ import (
 	"errors"
 	"path/filepath"
 	"image/png"
+	"image/color/palette"
 )
 
 type file struct {
@@ -50,48 +51,32 @@ Usage of commands:
 var dither map[string]colorquant.Dither = map[string]colorquant.Dither{
 	"FloydSteinberg" : colorquant.Dither{
 		[][]float32{
-			[]float32{ 7.0 / 32.0, 1.0, 0.0 },
-			[]float32{ 3.0 / 32.0, -1.0, 1.0 },
-			[]float32{ 5.0 / 32.0, 0.0, 1.0 },
-			[]float32{ 1.0 / 32.0, 1.0, 1.0 },
-			[]float32{ 3.0 / 32.0, 1.0, -1.0 },
+			[]float32{ 0.0, 0.0, 0.0, 7.0 / 48.0, 5.0 / 48.0 },
+			[]float32{ 3.0 / 48.0, 5.0 / 48.0, 7.0 / 48.0, 5.0 / 48.0, 3.0 / 48.0 },
+			[]float32{ 1.0 / 48.0, 3.0 / 48.0, 5.0 / 48.0, 3.0 / 48.0, 1.0 / 48.0 },
+			//[]float32{ 5.0 / 48.0, 2.0 / 48.0, 1.0 / 48.0, 0.0, 0.0 },
 		},
 	},
 	"Burkes" : colorquant.Dither{
 		[][]float32{
-			[]float32{ 8.0 / 32.0, 1.0, 0.0 },
-			[]float32{ 4.0 / 32.0, 2.0, 0.0 },
-			[]float32{ 2.0 / 32.0, -2.0, 1.0 },
-			[]float32{ 4.0 / 32.0, -1.0, 1.0 },
-			[]float32{ 8.0 / 32.0, 0.0, 1.0 },
-			[]float32{ 4.0 / 32.0, 1.0, 1.0 },
-			[]float32{ 2.0 / 32.0, 2.0, 1.0 },
-			[]float32{ 4.0 / 32.0, 1.0, -1.0 },
+			[]float32{ 0.0, 0.0, 0.0, 8.0 / 32.0, 4.0 / 32.0 },
+			[]float32{ 2.0 / 32.0, 4.0 / 32.0, 8.0 / 32.0, 4.0 / 32.0, 2.0 / 32.0 },
+			[]float32{ 0.0, 0.0, 0.0, 0.0, 0.0 },
+			[]float32{ 4.0 / 32.0, 8.0 / 32.0, 0.0, 0.0, 0.0 },
 		},
 	},
-	"Atkinson" : colorquant.Dither{
+	"Stucki" : colorquant.Dither{
 		[][]float32{
-			[]float32{ 1.0 / 8.0, 1.0, 0.0 },
-			[]float32{ 1.0 / 8.0, 2.0, 0.0 },
-			[]float32{ 1.0 / 8.0, -1.0, 1.0 },
-			[]float32{ 1.0 / 8.0, 0.0, 1.0 },
-			[]float32{ 1.0 / 8.0, 1.0, 1.0 },
-			[]float32{ 1.0 / 8.0, 0.0, 2.0 },
-			[]float32{ 1.0 / 8.0, 0.0, 2.0 },
+			[]float32{ 0.0, 0.0, 0.0, 8.0 / 42.0, 4.0 / 42.0 },
+			[]float32{ 2.0 / 42.0, 4.0 / 42.0, 8.0 / 42.0, 4.0 / 42.0, 2.0 / 42.0 },
+			[]float32{ 1.0 / 42.0, 2.0 / 42.0, 4.0 / 42.0, 2.0 / 42.0, 1.0 / 42.0 },
 		},
 	},
-	"Sierra" : colorquant.Dither{
+	"Sierra-3" : colorquant.Dither{
 		[][]float32{
-			[]float32{ 5.0 / 48.0, 1.0, 0.0 },
-			[]float32{ 3.0 / 48.0, 2.0, 0.0 },
-			[]float32{ 2.0 / 48.0, -2.0, 1.0 },
-			[]float32{ 4.0 / 48.0, -1.0, 1.0 },
-			[]float32{ 5.0 / 48.0, 0.0, 1.0 },
-			[]float32{ 4.0 / 48.0, 1.0, 1.0 },
-			[]float32{ 2.0 / 48.0, 2.0, 1.0 },
-			[]float32{ 2.0 / 48.0, -1.0, 2.0 },
-			[]float32{ 3.0 / 48.0, 0.0, 2.0 },
-			[]float32{ 2.0 / 48.0, 1.0, 2.0 },
+			[]float32{ 0.0, 0.0, 0.0, 5.0 / 32.0, 3.0 / 32.0 },
+			[]float32{ 2.0 / 32.0, 4.0 / 32.0, 5.0 / 32.0, 4.0 / 32.0, 2.0 / 32.0 },
+			[]float32{ 0.0, 2.0 / 32.0, 3.0 / 32.0, 2.0 / 32.0, 0.0 },
 		},
 	},
 }
@@ -109,12 +94,13 @@ func (file *file) Open() (image.Image, error) {
 }
 
 // Save the generated image
-func (file *file) Quantify(img image.Image, output string) (image.Image, error) {
+func (file *file) Quantify(src image.Image, output string) (image.Image, error) {
 	var err error
 	var quant image.Image
 
+	dst := image.NewPaletted(image.Rect(0, 0, src.Bounds().Dx(), src.Bounds().Dy()), palette.WebSafe)
 	if noDither {
-		quant = colorquant.NoDither.Quantize(img, numColors)
+		quant = colorquant.NoDither.Quantize(src, dst, numColors, false)
 	} else {
 		if _, ok := dither[ditherMethod]; !ok {
 			log.Fatal("\nInvalid dithering method!")
@@ -122,7 +108,7 @@ func (file *file) Quantify(img image.Image, output string) (image.Image, error) 
 		}
 
 		ditherer := dither[ditherMethod]
-		quant = ditherer.Quantize(img, numColors)
+		quant = ditherer.Quantize(src, dst, numColors, true)
 	}
 
 	fq, err := os.Create(output)
