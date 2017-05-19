@@ -16,8 +16,8 @@ type Dither struct {
 var NoDither Quantizer = Dither{}
 
 // The Quantize method takes as parameter the original image and returns the processed image with dithering.
-func (dither Dither) Quantize(input image.Image, output draw.Image, nq int, useDither bool) image.Image {
-	res := ditherImage(input, output, nq, dither, useDither)
+func (dither Dither) Quantize(input image.Image, output draw.Image, nq int, useDither bool, useQuantizer bool) image.Image {
+	res := ditherImage(input, output, nq, dither, useDither, useQuantizer)
 	return res
 }
 
@@ -30,14 +30,15 @@ func (dither Dither) Empty() bool {
 }
 
 // Private function to call error quantization method (dithering) over an image.
-func ditherImage(src image.Image, dst draw.Image, nq int, dither Dither, useDither bool) image.Image {
+func ditherImage(src image.Image, dst draw.Image, nq int, dither Dither, useDither bool, useQuantizer bool) image.Image {
 	var quant image.Image
 	var er, eg, eb, ea int32
 	dx, dy := src.Bounds().Dx(), src.Bounds().Dy()
 
-	// Import the quantized image.
-	// The first parameter is the destination image. The second parameter is the quantization level (the number of colors).
-	quant = Quant{}.Quantize(src, nq)
+	// Import the quantized image and specify the quantization level
+	if useQuantizer {
+		quant = Quant{}.Quantize(src, nq)
+	}
 
 	// Prepopulate a multidimensional slice. We will use this to store the quantization level.
 	rErr := make([][]float32, dx)
@@ -69,14 +70,15 @@ func ditherImage(src image.Image, dst draw.Image, nq int, dither Dither, useDith
 	}
 
 	out := color.RGBA{A:0xff}
+
 	// Loop trough the image and process each pixel individually.
 	for x := 0; x != dx; x++ {
 		for y := 0; y != dy; y++ {
-			if palette != nil {
+			if !useQuantizer {
 				r1, g1, b1, a1 := src.At(x, y).RGBA()
-
 				// er, eg and eb are the pixel's R,G,B values
 				er, eg, eb, ea = int32(r1), int32(g1), int32(b1), int32(a1)
+
 				if useDither {
 					er = clamp(er + int32(rErr[x][y] * 1.12))
 					eg = clamp(eg + int32(gErr[x][y] * 1.12))
@@ -119,61 +121,46 @@ func ditherImage(src image.Image, dst draw.Image, nq int, dither Dither, useDith
 						bErr[x+xx][y+yy] += float32(eb) * dither.Filter[xx][yy + ydim]
 					}
 				}
-
 			} else {
-				r1, g1, b1, a1 := dst.At(x, y).RGBA()
 				// Find the closest pixel color between the paletted image and the original image.
-				r2, g2, b2, a2 := findClosestColor(quant.(*image.Paletted), src.At(x, y)).RGBA()
+				r1, g1, b1, a1 := findClosestColor(quant.(*image.Paletted), src.At(x, y)).RGBA()
+				// er, eg and eb are the pixel's R,G,B values
+				er, eg, eb, ea := int32(r1), int32(g1), int32(b1), int32(a1)
 
-				// Set the pixel results in each color channel separately.
-				// We need to right shift the resulting colors with 8 bits.
-				out.R = uint8(r2>>8)
-				out.G = uint8(g2>>8)
-				out.B = uint8(b2>>8)
-				out.A = uint8(a2>>8)
+				if useDither && !dither.Empty() {
+					er = clamp(er + int32(rErr[x][y] * 1.12))
+					eg = clamp(eg + int32(gErr[x][y] * 1.12))
+					eb = clamp(eb + int32(bErr[x][y] * 1.12))
+				}
+				out.R = uint8(er>>8)
+				out.G = uint8(eg>>8)
+				out.B = uint8(eb>>8)
+				out.A = uint8(ea>>8)
 
 				// Set the resulting pixel colors in the destination image.
 				dst.Set(x, y, &out)
 
-				if !dither.Empty() {
-					// Take the color difference between the paletted image and the original image.
-					er := uint8(r1>>8) - uint8(r2>>8)
-					eg := uint8(g1>>8) - uint8(g2>>8)
-					eb := uint8(b1>>8) - uint8(b2>>8)
-					ea := uint8(a1>>8) - uint8(a2>>8)
+				if !useDither || dither.Empty() {
+					continue
+				}
+				sr, sg, sb, sa := dst.At(x, y).RGBA()
+				er -= int32(sr)
+				eg -= int32(sg)
+				eb -= int32(sb)
+				ea -= int32(sa)
 
-					// Diffuse error in two dimension
-					ydim := len(dither.Filter) - 1
-					xdim := len(dither.Filter[1]) / 2 // split the X dimension in two halves
-
-					for xx := 0; xx < ydim + 1; xx++ {
-						for yy := -xdim; yy <= xdim - 1; yy++ {
-							if (y + yy < 0 || dy <= y + yy || x + xx < 0 || dx <= x + xx) && yy + ydim < 0 {
-								continue
-							}
-
-							var xt int = xx + x
-							var yt int = yy + y
-
-							if xt >= 0 && xt < dx && yt >= 0 && yt < dy {
-								r3, g3, b3, a3 := dst.At(xt, yt).RGBA()
-								d := dither.Filter[xx][yy + ydim]
-
-								// Quantize the resulting image with the error level multiplied with the dithering value.
-								r4 := float32(uint8(r3)) + (float32(uint8(er)) * d)
-								g4 := float32(uint8(g3)) + (float32(uint8(eg)) * d)
-								b4 := float32(uint8(b3)) + (float32(uint8(eb)) * d)
-								a4 := float32(uint8(a3)) + (float32(uint8(ea)) * d)
-
-								r := max(0, min(255, uint32(r4)))
-								g := max(0, min(255, uint32(g4)))
-								b := max(0, min(255, uint32(b4)))
-								a := max(0, min(255, uint32(a4)))
-
-								// Set the final colors in the destination image.
-								dst.Set(xt, yt, color.RGBA{uint8(r), uint8(g), uint8(b), uint8(a)})
-							}
+				// Diffuse error in two dimension
+				ydim := len(dither.Filter) - 1
+				xdim := len(dither.Filter[0]) / 2 // split the X dimension in two halves
+				for xx := 0; xx < ydim + 1; xx++ {
+					for yy := -xdim; yy <= xdim - 1; yy++ {
+						if y + yy < 0 || dy <= y + yy || x + xx < 0 || dx <= x + xx {
+							continue
 						}
+						// Propagate the quantization error
+						rErr[x+xx][y+yy] += float32(er) * dither.Filter[xx][yy + ydim]
+						gErr[x+xx][y+yy] += float32(eg) * dither.Filter[xx][yy + ydim]
+						bErr[x+xx][y+yy] += float32(eb) * dither.Filter[xx][yy + ydim]
 					}
 				}
 			}
@@ -204,9 +191,9 @@ func findClosestColor(palette *image.Paletted, src color.Color) color.Color {
 		// Get the color distance.
 		sum := math.Sqrt(
 			pr * sqDiffFloat(float64(cr), float64(vr)) +
-				pg * sqDiffFloat(float64(cg), float64(vg)) +
-				pb * sqDiffFloat(float64(cb), float64(vb)) +
-				pa * sqDiffFloat(float64(ca), float64(va))) / euclMax
+			pg * sqDiffFloat(float64(cg), float64(vg)) +
+			pb * sqDiffFloat(float64(cb), float64(vb)) +
+			pa * sqDiffFloat(float64(ca), float64(va))) / euclMax
 		// Get the min value.
 		if uint32(sum) < bestSum {
 			idx, bestSum = index, uint32(sum)

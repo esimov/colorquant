@@ -9,9 +9,9 @@ import (
 	"sort"
 )
 
-// Quantizer interface which implements the Quantize method.
+// Interface which implements the Quantize method.
 type Quantizer interface {
-	Quantize(image.Image, draw.Image, int, bool) image.Image
+	Quantize(image.Image, draw.Image, int, bool, bool) image.Image
 }
 
 // Image quantization method. Returns a paletted image.

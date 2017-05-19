@@ -24,7 +24,7 @@ type file struct {
 var (
 	input		string
 	output		string
-	ditherMethod	string
+	ditherer	string
 	imageType	string
 	noDither	bool
 	compression 	int
@@ -36,7 +36,7 @@ const helper = `
 Usage of commands:
   -compression int
     	JPEG compression. (default 100)
-  -dither string
+  -ditherer string
     	Dithering method. (default "FloydSteinberg")
   -no-dither
     	Use image quantizer without dithering.
@@ -54,7 +54,6 @@ var dither map[string]colorquant.Dither = map[string]colorquant.Dither{
 			[]float32{ 0.0, 0.0, 0.0, 7.0 / 48.0, 5.0 / 48.0 },
 			[]float32{ 3.0 / 48.0, 5.0 / 48.0, 7.0 / 48.0, 5.0 / 48.0, 3.0 / 48.0 },
 			[]float32{ 1.0 / 48.0, 3.0 / 48.0, 5.0 / 48.0, 3.0 / 48.0, 1.0 / 48.0 },
-			//[]float32{ 5.0 / 48.0, 2.0 / 48.0, 1.0 / 48.0, 0.0, 0.0 },
 		},
 	},
 	"Burkes" : colorquant.Dither{
@@ -72,11 +71,32 @@ var dither map[string]colorquant.Dither = map[string]colorquant.Dither{
 			[]float32{ 1.0 / 42.0, 2.0 / 42.0, 4.0 / 42.0, 2.0 / 42.0, 1.0 / 42.0 },
 		},
 	},
+	"Atkinson" : colorquant.Dither{
+		[][]float32{
+			[]float32{ 0.0, 0.0, 1.0 / 8.0, 1.0 / 8.0 },
+			[]float32{ 1.0 / 8.0, 1.0 / 8.0, 1.0 / 8.0, 0.0 },
+			[]float32{ 0.0, 1.0 / 8.0, 0.0, 0.0 },
+		},
+	},
 	"Sierra-3" : colorquant.Dither{
 		[][]float32{
 			[]float32{ 0.0, 0.0, 0.0, 5.0 / 32.0, 3.0 / 32.0 },
 			[]float32{ 2.0 / 32.0, 4.0 / 32.0, 5.0 / 32.0, 4.0 / 32.0, 2.0 / 32.0 },
 			[]float32{ 0.0, 2.0 / 32.0, 3.0 / 32.0, 2.0 / 32.0, 0.0 },
+		},
+	},
+	"Sierra-2" : colorquant.Dither{
+		[][]float32{
+			[]float32{ 0.0, 0.0, 0.0, 4.0 / 16.0, 3.0 / 16.0 },
+			[]float32{ 1.0 / 16.0, 2.0 / 16.0, 3.0 / 16.0, 2.0 / 16.0, 1.0 / 16.0 },
+			[]float32{ 0.0, 0.0, 0.0, 0.0, 0.0 },
+		},
+	},
+	"Sierra-Lite" : colorquant.Dither{
+		[][]float32{
+			[]float32{ 0.0, 0.0, 2.0 / 4.0 },
+			[]float32{ 1.0 / 4.0, 1.0 / 4.0, 0.0 },
+			[]float32{ 0.0, 0.0, 0.0 },
 		},
 	},
 }
@@ -100,15 +120,15 @@ func (file *file) Quantify(src image.Image, output string) (image.Image, error) 
 
 	dst := image.NewPaletted(image.Rect(0, 0, src.Bounds().Dx(), src.Bounds().Dy()), palette.WebSafe)
 	if noDither {
-		quant = colorquant.NoDither.Quantize(src, dst, numColors, false)
+		quant = colorquant.NoDither.Quantize(src, dst, numColors, false, true)
 	} else {
-		if _, ok := dither[ditherMethod]; !ok {
+		if _, ok := dither[ditherer]; !ok {
 			log.Fatal("\nInvalid dithering method!")
 			return nil, err
 		}
 
-		ditherer := dither[ditherMethod]
-		quant = ditherer.Quantize(src, dst, numColors, true)
+		ditherer := dither[ditherer]
+		quant = ditherer.Quantize(src, dst, numColors, true, true)
 	}
 
 	fq, err := os.Create(output)
@@ -135,7 +155,7 @@ func (file *file) Quantify(src image.Image, output string) (image.Image, error) 
 func main() {
 	commands = *flag.NewFlagSet("commands", flag.ExitOnError)
 	commands.StringVar(&output, "output", "output", "Output directory.")
-	commands.StringVar(&ditherMethod, "dither", "FloydSteinberg", "Dithering method.")
+	commands.StringVar(&ditherer, "ditherer", "FloydSteinberg", "Dithering method.")
 	commands.StringVar(&imageType, "type", "jpg", "Image type. Possible options .jpg, .png")
 	commands.BoolVar(&noDither, "no-dither", false, "Use image quantizer without dithering.")
 	commands.IntVar(&compression, "compression", 100, "JPEG compression.")
@@ -178,13 +198,13 @@ func main() {
 				if noDither {
 					input.Quantify(img, "output.jpg")
 				} else {
-					input.Quantify(img, ditherMethod + ".jpg")
+					input.Quantify(img, ditherer + ".jpg")
 				}
 			case "png" :
 				if noDither {
 					input.Quantify(img, "output.png")
 				} else {
-					input.Quantify(img, ditherMethod + ".png")
+					input.Quantify(img, ditherer + ".png")
 				}
 			}
 			done <- struct{}{}
