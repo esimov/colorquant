@@ -15,12 +15,6 @@ type Dither struct {
 // Used to call the default quantize method without applying dithering.
 var NoDither Quantizer = Dither{}
 
-// The Quantize method takes as parameter the original image and returns the processed image with dithering.
-func (dither Dither) Quantize(input image.Image, output draw.Image, nq int, useDither bool, useQuantizer bool) image.Image {
-	res := ditherImage(input, output, nq, dither, useDither, useQuantizer)
-	return res
-}
-
 // Check if dither struct is empty. If empty this means we are not using any dithering method.
 func (dither Dither) Empty() bool {
 	if len(dither.Filter) > 0 {
@@ -29,8 +23,8 @@ func (dither Dither) Empty() bool {
 	return true
 }
 
-// Private function to call error quantization method (dithering) over an image.
-func ditherImage(src image.Image, dst draw.Image, nq int, dither Dither, useDither bool, useQuantizer bool) image.Image {
+// The Quantize method takes as parameter the original image and returns the processed image with dithering.
+func (dither Dither) Quantize(src image.Image, dst draw.Image, nq int, useDither bool, useQuantizer bool) image.Image {
 	var quant image.Image
 	var er, eg, eb, ea int32
 	dx, dy := src.Bounds().Dx(), src.Bounds().Dy()
