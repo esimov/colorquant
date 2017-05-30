@@ -5,6 +5,7 @@ import (
 	"image"
 	"image/color/palette"
 	"image/color"
+	"math/rand"
 )
 
 func TestQuant_Paletted(t *testing.T) {
@@ -48,5 +49,31 @@ func TestQuant_Median(t *testing.T) {
 	res := qz.Median(cls)
 	if res != 0 {
 		t.Errorf("The expected result should be 0, got %d", res)
+	}
+}
+
+func TestQuant_Level (t *testing.T) {
+	quantLevel := 10
+	reds := []uint32{}
+	img := image.NewRGBA(image.Rect(0, 0, 10, 10))
+
+	for i := 0; i < img.Bounds().Dx(); i++ {
+		for j := 0; j < img.Bounds().Dy(); j ++ {
+			col := rand.Intn(255)
+			img.Set(i, j, color.RGBA{uint8(col), 0, 0, 0})
+		}
+	}
+
+	res := Quant{}.Quantize(img, quantLevel)
+
+	if p, ok := res.(*image.Paletted); ok {
+		for _, col := range p.Palette {
+			r, _, _, _ := col.RGBA()
+			reds = append(reds, r)
+		}
+
+		if len(reds) != quantLevel {
+			t.Errorf("The quantization level should be %d, got %d", quantLevel, len(reds))
+		}
 	}
 }
