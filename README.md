@@ -79,7 +79,7 @@ All the examples below are generated using *Floyd-Steinberg* dithering method wi
 |:--:|:--:|:--:|
 | *128* | <img src="https://cloud.githubusercontent.com/assets/883386/26618632/b0e865b2-45e3-11e7-9312-c66f5d690312.jpg"> | <img src="https://cloud.githubusercontent.com/assets/883386/26618639/b623c77e-45e3-11e7-8900-2850bb8a0a9d.jpg"> |
 | *256* | <img src="https://cloud.githubusercontent.com/assets/883386/26618480/2f9b1158-45e3-11e7-9851-742a21e1f8af.jpg"> | <img src="https://cloud.githubusercontent.com/assets/883386/26618461/229eb626-45e3-11e7-8fa4-9eaeeeb55712.jpg"> | 
-| *512* | <img src="https://cloud.githubusercontent.com/assets/883386/26617946/a860de4a-45e0-11e7-8c19-1e6fa3fd6e19.jpg" > | <img src="https://cloud.githubusercontent.com/assets/883386/26618118/9cce2046-45e1-11e7-8945-4bea76459741.jpg"> | 
+| *512* | <img src="https://cloud.githubusercontent.com/assets/883386/26630928/7f3bb82e-4611-11e7-9a2d-ecaaea11c25b.jpg" > | <img src="https://cloud.githubusercontent.com/assets/883386/26630921/764a2598-4611-11e7-9c60-3d63cd2759c3.jpg"> | 
 | *1024* | <img src="https://cloud.githubusercontent.com/assets/883386/26619097/a27027de-45e5-11e7-83b3-cb5b9e7d7079.jpg" > | <img src="https://cloud.githubusercontent.com/assets/883386/26619106/a8ec32b0-45e5-11e7-9642-c0f74a384544.jpg"> | 
 
 ## License
