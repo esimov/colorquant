@@ -1,6 +1,6 @@
-# colorquant
+# Colorquant
 
-<strong>Colorquant</strong> is an image / color quantization library written in Go. It can be considered as a replacement for the core image <a href="https://golang.org/pkg/image/draw/">draw</a> method, for various reasons (see below).
+Colorquant is an image / color quantization library written in Go. It can be considered as a replacement for the core image <a href="https://golang.org/pkg/image/draw/">draw</a> method, for various reasons (see below).
 
 ### The purpose
 
