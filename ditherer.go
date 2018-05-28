@@ -7,15 +7,15 @@ import (
 	"image/draw"
 )
 
-// Struct containing a two dimensional slice for storing different dithering methods.
+// Dither is a two dimensional slice for storing different dithering methods.
 type Dither struct {
 	Filter [][]float32
 }
 
-// Used to call the default quantize method without applying dithering.
+// NoDither is used to call the default quantize method without applying dithering.
 var NoDither Quantizer = Dither{}
 
-// Check if dither struct is empty. If empty this means we are not using any dithering method.
+// Empty check if dither struct is empty. If empty this means we are not using any dithering method.
 func (dither Dither) Empty() bool {
 	if len(dither.Filter) > 0 {
 		return false
@@ -23,7 +23,7 @@ func (dither Dither) Empty() bool {
 	return true
 }
 
-// The Quantize method takes as parameter the original image and returns the processed image with dithering.
+// Quantize takes as parameter the original image and returns the processed image with or without dithering applied.
 func (dither Dither) Quantize(src image.Image, dst draw.Image, nq int, useDither bool, useQuantizer bool) image.Image {
 	var quant image.Image
 	var er, eg, eb, ea int32
@@ -200,7 +200,7 @@ func findClosestColor(palette *image.Paletted, src color.Color) color.Color {
 	return palette.Palette[idx]
 }
 
-// Clamp clamps i to the interval [0, 0xffff].
+// clamp clamps i to the interval [0, 0xffff].
 func clamp(i int32) int32 {
 	if i < 0 {
 		return 0
@@ -211,7 +211,7 @@ func clamp(i int32) int32 {
 	return i
 }
 
-// Returns the squared-difference of X and Y.
+// sqDiffFloat returns the squared-difference of X and Y.
 func sqDiffFloat(x, y float64) float64 {
 	var d float64
 
@@ -223,7 +223,7 @@ func sqDiffFloat(x, y float64) float64 {
 	return float64(d * d)
 }
 
-// Returns the squared-difference of X and Y.
+// sqDiff returns the squared-difference of X and Y.
 func sqDiff(x, y int32) uint32 {
 	var d uint32
 	if x > y {
@@ -235,7 +235,7 @@ func sqDiff(x, y int32) uint32 {
 }
 
 
-// Returns the smallest number between two numbers.
+// min returns the smallest number between two numbers.
 func min(x, y uint32) uint32 {
 	if x < y {
 		return x
@@ -243,7 +243,7 @@ func min(x, y uint32) uint32 {
 	return y
 }
 
-// Returns the biggest number between two numbers.
+// max returns the biggest number between two numbers.
 func max(x, y uint32) uint32 {
 	if x > y {
 		return x

@@ -74,7 +74,7 @@ func newQuantizer(img image.Image, nq int) *Quant {
 func (qz *Quant) cluster() {
 	// Cluster by repeatedly splitting clusters.
 	// Use a heap as priority queue for picking clusters to split.
-	// The rule will be to spilt the cluster with the most pixels.
+	// The rule will be to split the cluster with the most pixels.
 	// Terminate when the desired number of clusters has been populated
 	// or when clusters cannot be further split.
 	pq := new(queue)
