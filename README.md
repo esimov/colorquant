@@ -90,7 +90,3 @@ All the examples below are generated using *Floyd-Steinberg* dithering method wi
 Copyright © 2017 Endre Simo
 
 This software is distributed under the MIT license. See the [LICENSE](https://github.com/esimov/colorquant/blob/master/LICENSE) file for the full license text.
-
-## License
-
-This software is distributed under the MIT license found in the LICENSE file.
