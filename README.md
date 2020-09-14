@@ -13,7 +13,7 @@ To create a smoother transition between colors and to wash out the edges various
 The implementation is mainly based on the article from <a href="http://www.leptonica.com/color-quantization.html">Leptonica</a>.
 
 The reason why I opted for a custom quantization and dithering algorithm are twofold:
-* First, even the core draw method does provide an error quantization algorithm, it does not implement the support for quantization level (to how many colors we wish to reduce the original image).
+* First, even if the core draw method uses an error quantization algorithm, it does not provide support for the quantization level, which means to how many colors we wish to reduce the original image.
 * Second, the dithering method is based exclusively on Floyd-Steinberg dithering method, but there are other dithering algorithm, which can be used (ex. Burkes, Stucki, Atkinson, Sierra etc.).
 
 ### Installation
@@ -22,7 +22,7 @@ The reason why I opted for a custom quantization and dithering algorithm are two
 
 ### Running
 
-The library provides a CLI method to generate the quantified images. Type `go run cli.go --help` to get the supported commands.
+The library provides a CLI method to generate the quantified images. Type `go run cli.go --help` to check the supported commands.
 
 ```
 Usage of commands:
@@ -44,7 +44,7 @@ The generated images will be exported into the `output` folder. By default the <
 
 ### Usage
 
-##### ➤ Without dither
+##### ➤ Without dithering
 This is main method to generate a non-dithered quantified image:
 
 ```go
@@ -52,13 +52,12 @@ colorquant.NoDither.Quantize(src, dst, numColors, false, true)
 ```
 where the last paremeter means either to use the library quantization algorithm (if the parameter is <i>true</i>), otherwise use the quantization level provided by the paletted image (if the paramater is <i>false</i>).
 
-##### ➤ With dither
-The same, but this time using a dithering method:
+##### ➤ With dithering
 
 ```go
 ditherer.Quantize(src, dst, numColors, true, true)
 ```
-where ditherer is struct with the form of:
+where ditherer is a struct with the form of:
 
 ```go
 "FloydSteinberg" : colorquant.Dither{
@@ -81,6 +80,16 @@ All the examples below are generated using *Floyd-Steinberg* dithering method wi
 | *256* | <img src="https://cloud.githubusercontent.com/assets/883386/26618480/2f9b1158-45e3-11e7-9851-742a21e1f8af.jpg"> | <img src="https://cloud.githubusercontent.com/assets/883386/26618461/229eb626-45e3-11e7-8fa4-9eaeeeb55712.jpg"> | 
 | *512* | <img src="https://cloud.githubusercontent.com/assets/883386/26630928/7f3bb82e-4611-11e7-9a2d-ecaaea11c25b.jpg" > | <img src="https://cloud.githubusercontent.com/assets/883386/26630921/764a2598-4611-11e7-9c60-3d63cd2759c3.jpg"> | 
 | *1024* | <img src="https://cloud.githubusercontent.com/assets/883386/26619097/a27027de-45e5-11e7-83b3-cb5b9e7d7079.jpg" > | <img src="https://cloud.githubusercontent.com/assets/883386/26619106/a8ec32b0-45e5-11e7-9642-c0f74a384544.jpg"> | 
+
+## Author
+
+* Endre Simo ([@simo_endre](https://twitter.com/simo_endre))
+
+## License
+
+Copyright © 2017 Endre Simo
+
+This software is distributed under the MIT license. See the [LICENSE](https://github.com/esimov/colorquant/blob/master/LICENSE) file for the full license text.
 
 ## License
 
