@@ -65,7 +65,7 @@ func (dither Dither) Quantize(src image.Image, dst draw.Image, nq int, useDither
 
 	out := color.RGBA{A:0xff}
 
-	// Loop trough the image and process each pixel individually.
+	// Loop through the image and process each pixel individually.
 	for x := 0; x != dx; x++ {
 		for y := 0; y != dy; y++ {
 			if !useQuantizer {
