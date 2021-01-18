@@ -1,4 +1,5 @@
 # Colorquant
+![CI](https://github.com/esimov/colorquant/workflows/CI/badge.svg)
 [![go.dev reference](https://img.shields.io/badge/go.dev-reference-007d9c?logo=go)](https://pkg.go.dev/github.com/esimov/colorquant)
 [![license](https://img.shields.io/github/license/esimov/pigo)](./LICENSE)
 
