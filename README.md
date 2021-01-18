@@ -1,4 +1,6 @@
 # Colorquant
+[![go.dev reference](https://img.shields.io/badge/go.dev-reference-007d9c?logo=go)](https://pkg.go.dev/github.com/esimov/colorquant)
+[![license](https://img.shields.io/github/license/esimov/pigo)](./LICENSE)
 
 Colorquant is an image / color quantization library written in Go. It can be considered as a replacement for the quantization and dithering part of the <a href="https://golang.org/pkg/image/draw/">draw</a> method from the core image library for various reasons (see below).
 
@@ -44,7 +46,7 @@ The generated images will be exported into the `output` folder. By default the <
 
 ### Usage
 
-##### ➤ Without dithering
+#### ➤ Without dithering
 This is main method to generate a non-dithered quantified image:
 
 ```go
@@ -52,7 +54,7 @@ colorquant.NoDither.Quantize(src, dst, numColors, false, true)
 ```
 where the last paremeter means either to use the library quantization algorithm (if the parameter is <i>true</i>), otherwise use the quantization level provided by the paletted image (if the paramater is <i>false</i>).
 
-##### ➤ With dithering
+#### ➤ With dithering
 
 ```go
 ditherer.Quantize(src, dst, numColors, true, true)
