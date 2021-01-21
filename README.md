@@ -1,7 +1,7 @@
 # Colorquant
 [![CI](https://github.com/esimov/colorquant/workflows/CI/badge.svg)](https://github.com/esimov/colorquant/actions)
 [![go.dev reference](https://img.shields.io/badge/go.dev-reference-007d9c?logo=go)](https://pkg.go.dev/github.com/esimov/colorquant)
-[![license](https://img.shields.io/github/license/esimov/pigo)](./LICENSE)
+[![license](https://img.shields.io/github/license/esimov/colorquant)](./LICENSE)
 
 Colorquant is an image / color quantization library written in Go. It can be considered as a replacement for the quantization and dithering part of the <a href="https://golang.org/pkg/image/draw/">draw</a> method from the core image library for various reasons (see below).
 
